@@ -6,9 +6,6 @@ TO A SERVER USING HTTP MULTIPART POST
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include <EEPROM.h>
-#include "FS.h"           
-#include "SD_MMC.h"       
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "driver/rtc_io.h"
@@ -53,8 +50,6 @@ WiFiClient client;
 #define WIFI_TIMEOUT_S    30          /* Max WiFI waiting connection time (in seconds) */
 #define SERVER_TIMEOUT_S  10          /* Max response time waiting for server response */
 
-#define EEPROM_SIZE 1
-
 int picNumber = 0;
 String sdpath = "/images/";
 String picname = "image";
@@ -97,22 +92,6 @@ void setup() {
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
   
-
-  if(!SD_MMC.begin()){
-    Serial.println("SD Card Mount Failed");
-    Serial.println("Going to sleep now ");
-    Serial.flush(); 
-    esp_deep_sleep_start();
-  }
-  
-  uint8_t cardType = SD_MMC.cardType();
-  if(cardType == CARD_NONE){
-    Serial.println("No SD Card attached");
-    Serial.println("Going to sleep now ");
-    Serial.flush(); 
-    esp_deep_sleep_start();
-  }
-
   // init with high specs to pre-allocate larger buffers
   if(psramFound()){
     config.frame_size = FRAMESIZE_SVGA;
@@ -161,28 +140,6 @@ void setup() {
     Serial.flush(); 
     esp_deep_sleep_start();
   }
-
-  // initialize EEPROM with predefined size
-  EEPROM.begin(EEPROM_SIZE);
-  picNumber = EEPROM.read(0) + 1;
-
-  // Path where new picture will be saved in SD Card
-  String fpath = sdpath + picname +String(picNumber) + filext;
-
-  fs::FS &fs = SD_MMC; 
-  Serial.printf("Picture file name: %s\n", fpath.c_str());
-  
-  File file = fs.open(fpath.c_str(), FILE_WRITE);
-  if(!file){
-    Serial.println("Failed to open file in writing mode");
-  } 
-  else {
-    file.write(pbuff->buf, pbuff->len); // payload (image), payload length
-    Serial.printf("Saved file to path: %s\n", fpath.c_str());
-    EEPROM.write(0, picNumber);
-    EEPROM.commit();
-  }
-  file.close();
 
   // Turns off the ESP32-CAM white on-board LED (flash)
   pinMode(FLASHLED_GPIO_NUM, OUTPUT);
