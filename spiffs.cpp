@@ -39,6 +39,26 @@ listDir(fs::FS &fs, const char *dirname, uint8_t levels)
 }
 
 void
+deleteFile(fs::FS &fs, const char *path)
+{
+    Serial.printf("Deleting file: %s\r\n", path);
+    if (fs.remove(path))
+        Serial.println("- file deleted");
+    else
+        Serial.println("- delete failed");
+}
+
+void
+formatSPIFFS(fs::FS &fs)
+{
+    if (!SPIFFS.format()) {
+        Serial.println("SPIFFS Format Failed");
+        return;
+    }
+    Serial.println("SPIFFS Formatted");
+}
+
+void
 spiffs_setup()
 {
     if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
