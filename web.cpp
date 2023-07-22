@@ -7,6 +7,7 @@
 #include <ESPAsyncWebSrv.h>
 #include <SPIFFSEditor.h>
 #include "web.h"
+#include "spiffs.h"
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
@@ -123,6 +124,12 @@ web_setup()
   
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
+  });
+
+  server.on("/format", HTTP_GET, [](AsyncWebServerRequest *request){
+      Serial.printf("format SPIFFS\n");
+      formatSPIFFS(SPIFFS);
+      request->redirect("/");
   });
 
   server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
