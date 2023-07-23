@@ -150,7 +150,10 @@ web_setup()
       request->redirect("/");
   });
 
-  server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest* request){
+  server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
+      AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Rebooted");
+      response->addHeader("Connection", "close");
+      request->send(response);
       request->redirect("/");
       Serial.println("Reboot"); Serial.flush();
       ESP.restart();
