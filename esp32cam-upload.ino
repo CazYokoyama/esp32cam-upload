@@ -11,15 +11,10 @@ TO A SERVER USING HTTP MULTIPART POST
 #include "driver/rtc_io.h"
 #include "esp_camera.h"
 
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASS";
-
-String serverName = "1.2.3.4";      // REPLACE WITH YOUR Raspberry Pi IP ADDRESS OR DOMAIN NAME
 String serverEndpoint = "/upload";        // Needs to match upload server endpoint
 String keyName = "\"myFile\"";            // Needs to match upload server keyName
-const int serverPort = 8080;
 
-WiFiClient client;
+#include "wifi.h"
 
 // CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM     32
@@ -46,9 +41,6 @@ WiFiClient client;
 
 #define uS_TO_S_FACTOR    1000000ULL  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP_S   60          /* Time ESP32 will go to sleep (in seconds) */
-
-#define WIFI_TIMEOUT_S    30          /* Max WiFI waiting connection time (in seconds) */
-#define SERVER_TIMEOUT_S  10          /* Max response time waiting for server response */
 
 int picNumber = 0;
 String sdpath = "/images/";
@@ -146,32 +138,7 @@ void setup() {
   digitalWrite(FLASHLED_GPIO_NUM, LOW);
   rtc_gpio_hold_en(RTCLED_GPIO_NUM);
 
-  int wTimer = WIFI_TIMEOUT_S*1000;
-  long wStartTimer = millis();
-
-  WiFi.mode(WIFI_STA);
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.begin(ssid, password);  
-  
-  while ((wStartTimer + wTimer) > millis()) {
-      if( WiFi.status() == WL_CONNECTED )
-      {
-        break;
-      }
-  }
-    
-  if ( (WiFi.status() != WL_CONNECTED) ){
-    Serial.println("connection to WiFI failed");
-    Serial.println("Going to sleep now ");
-    Serial.flush(); 
-    esp_deep_sleep_start();    
-  }
-  
-  Serial.println();
-  Serial.print("ESP32-CAM IP Address: ");
-  Serial.println(WiFi.localIP());
+  wifi_setup();
 
   // When connected to WiFi turn ON debug led
   digitalWrite(DEBUGLED_GPIO_NUM, LOW);
