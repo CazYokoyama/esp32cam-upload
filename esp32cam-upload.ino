@@ -77,9 +77,8 @@ void setup() {
   camera_setup();
 
   config_setup();
-  read_config();
-
-  wifimode = wifi_setup();
+  bool configExist = read_config();
+  wifimode = wifi_setup(configExist);
 }
 
 void loop() {

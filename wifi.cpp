@@ -18,24 +18,26 @@ char *ap_password = "123456789";
 WiFiClient client;
 
 wifi_mode_t
-wifi_setup()
+wifi_setup(bool configExist)
 {
-    WiFi.mode(WIFI_STA);
-    Serial.print("Connecting to "); Serial.println(ssid);
-    WiFi.begin(ssid.c_str(), password.c_str());
-    for (int retry = 0; retry++ < MAX_RETRY; ) {
-        if (WiFi.status() == WL_CONNECTED)
-            break;
-        Serial.print(".");
-        delay(500);
+    if (configExist) {
+        WiFi.mode(WIFI_STA);
+        Serial.print("Connecting to "); Serial.println(ssid);
+        WiFi.begin(ssid.c_str(), password.c_str());
+        for (int retry = 0; retry++ < MAX_RETRY; ) {
+            if (WiFi.status() == WL_CONNECTED)
+                break;
+            Serial.print(".");
+            delay(500);
+        }
+        Serial.println();
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.print("ESP32-CAM IP Address: ");
+            Serial.println(WiFi.localIP());
+            return  WIFI_MODE_STA;
+        }
+        Serial.print("can't connect: "); Serial.println(ssid);
     }
-    Serial.println();
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.print("ESP32-CAM IP Address: ");
-        Serial.println(WiFi.localIP());
-        return  WIFI_MODE_STA;
-    }
-    Serial.print("can't connect: "); Serial.println(ssid);
 
     /* start AP */
     WiFi.mode(WIFI_AP);

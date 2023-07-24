@@ -17,6 +17,6 @@ extern String serverPath;
 extern int serverPort;
 extern WiFiClient client;
 
-wifi_mode_t wifi_setup();
+wifi_mode_t wifi_setup(bool configExist);
 
 #endif _WIFI_H_
