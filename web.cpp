@@ -14,6 +14,42 @@ AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 AsyncEventSource events("/events");
 
+static const char upload_html[] PROGMEM = "\
+<html>\
+  <head>\
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\
+  </head>\
+  <div class = 'upload'>\
+    <form method = 'POST' action = '/doUpload' enctype='multipart/form-data'>\
+      <input type='file' name='data'/>\
+      <input type='submit' name='upload' value='Upload' title = 'Upload Files'>\
+    </form>\
+  </div>\
+  <td><a href='format' class='button_format' >Format SPIFFS</a></td>\
+  <td><a href='reboot' class='button_reboot' >Reboot</a></td>\
+</html>\
+";
+
+void
+handleUpload(AsyncWebServerRequest *request, String filename, size_t index,
+	     uint8_t *data, size_t len, bool final)
+{
+    if (index == 0) {
+        Serial.print("open: "); Serial.println(filename); Serial.flush();
+        request->_tempFile = SPIFFS.open(("/" + filename).c_str(), "w");
+    }
+    if (len) {
+        Serial.print("write: "); Serial.println(len); Serial.flush();
+        // stream the incoming chunk to the opened file
+        request->_tempFile.write(data, len);
+    }
+    if (final) {
+        Serial.print("close: "); Serial.println(filename); Serial.flush();
+        request->_tempFile.close();
+        request->redirect("/");
+    }
+}
+
 void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if(type == WS_EVT_CONNECT){
     Serial.printf("ws[%s][%u] connect\n", server->url(), client->id());
@@ -132,7 +168,17 @@ web_setup()
       request->redirect("/");
   });
 
-  server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.htm");
+  server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest* request){
+      request->redirect("/");
+      Serial.println("Reboot"); Serial.flush();
+      ESP.restart();
+  });
+
+  server.on("/", HTTP_GET, [upload_html](AsyncWebServerRequest* request){
+            request->send(200, "text/html", upload_html);
+  });
+
+  server.on("/doUpload", HTTP_POST, [](AsyncWebServerRequest* request) {}, handleUpload);
 
   server.onNotFound([](AsyncWebServerRequest *request){
     Serial.printf("NOT_FOUND: ");
