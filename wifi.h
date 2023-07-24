@@ -10,6 +10,8 @@
 #define WIFI_TIMEOUT_S    30          /* Max WiFI waiting connection time (in seconds) */
 #define SERVER_TIMEOUT_S  10          /* Max response time waiting for server response */
 
+extern String ssid;
+extern String password;
 extern String serverName;
 extern String serverPath;
 extern int serverPort;

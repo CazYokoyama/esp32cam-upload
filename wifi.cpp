@@ -3,8 +3,8 @@
 
 #include "wifi.h"
 
-char *ssid = "YOUR_SSID";
-char *password = "YOUR_PASS";
+String ssid = "YOUR_SSID";
+String password = "YOUR_PASS";
 
 String serverName = "1.2.3.4";
 String serverPath = "/upload";
@@ -21,7 +21,7 @@ wifi_setup()
   WiFi.mode(WIFI_STA);
   Serial.print("Connecting to ");
   Serial.println(ssid);
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid.c_str(), password.c_str());
 
   while ((wStartTimer + wTimer) > millis()) {
       if (WiFi.status() == WL_CONNECTED)

@@ -1,0 +1,8 @@
+{
+  "ssid": "YOUR_SSID",
+  "password": "OUR_PASS",
+  "serverName": "1.2.3.4"",
+  "serverPath": "/upload",
+  "serverPort": 8080,
+  "time_to_sleep_s": 60
+}

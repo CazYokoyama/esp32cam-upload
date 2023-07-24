@@ -14,6 +14,8 @@ String serverEndpoint = "/upload";        // Needs to match upload server endpoi
 String keyName = "\"myFile\"";            // Needs to match upload server keyName
 
 #include "wifi.h"
+#include "config.h"
+#include "spiffs.h"
 
 #define FLASHLED_GPIO_NUM 4
 #define RTCLED_GPIO_NUM   GPIO_NUM_4
@@ -23,7 +25,7 @@ String keyName = "\"myFile\"";            // Needs to match upload server keyNam
 
 #define mS_TO_S_FACTOR    1000        /* Conversion factor for mili seconds to seconds */
 #define uS_TO_S_FACTOR    1000000ULL  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP_S   60          /* Time ESP32 will go to sleep (in seconds) */
+int time_to_sleep_s = 60; /* Time ESP32 will go to sleep (in seconds) */
 
 int picNumber = 0;
 String sdpath = "/images/";
@@ -34,7 +36,7 @@ void setup() {
   
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
   rtc_gpio_hold_dis(RTCLED_GPIO_NUM);
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP_S * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
   
   // Turn off debug led
   pinMode(DEBUGLED_GPIO_NUM, OUTPUT);
@@ -46,6 +48,9 @@ void setup() {
   Serial.begin(115200);
 
   camera_setup();
+
+  config_setup();
+  read_config();
 
   wifi_setup();
 
