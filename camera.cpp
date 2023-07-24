@@ -31,7 +31,7 @@ camera_setup()
 
   // init with high specs to pre-allocate larger buffers
   if(psramFound()){
-    config.frame_size = FRAMESIZE_SVGA;
+    config.frame_size = FRAMESIZE_SXGA;
     config.jpeg_quality = 10;  //0-63 lower number means higher quality
     config.fb_count = 2;
   } else {
