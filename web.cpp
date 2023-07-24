@@ -7,6 +7,7 @@
 #include <Update.h>
 #include "web.h"
 #include "spiffs.h"
+#include "git-version.h"
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
@@ -18,20 +19,24 @@ static const char upload_html[] PROGMEM = "\
   <head>\
     <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>\
   </head>\
-  <div class = 'upload'>\
-    <form method = 'POST' action = '/doUpload' enctype='multipart/form-data'>\
-      <input type='file' name='data'/>\
-      <input type='submit' name='upload' value='Upload' title = 'Upload Files'>\
-    </form>\
-  </div>\
-  <div class = 'update'>\
-    <form method = 'POST' action = '/update' enctype='multipart/form-data'>\
-      <input type='file' name='data'/>\
-      <input type='submit' name='update' value='Update' title = 'Update Firmware'>\
-    </form>\
-  </div>\
-  <td><a href='format' class='button_format' >Format SPIFFS</a></td>\
-  <td><a href='reboot' class='button_reboot' >Reboot</a></td>\
+  <body>\
+    <h1>ESP32CAM periodic upload</h1>\
+    <h3>Version %s</h3>\
+    <div class = 'upload'>\
+      <form method = 'POST' action = '/doUpload' enctype='multipart/form-data'>\
+        <input type='file' name='data'/>\
+        <input type='submit' name='upload' value='Upload' title = 'Upload Files'>\
+      </form>\
+    </div>\
+    <div class = 'update'>\
+      <form method = 'POST' action = '/update' enctype='multipart/form-data'>\
+        <input type='file' name='data'/>\
+        <input type='submit' name='update' value='Update' title = 'Update Firmware'>\
+      </form>\
+    </div>\
+    <td><a href='format' class='button_format' >Format SPIFFS</a></td>\
+    <td><a href='reboot' class='button_reboot' >Reboot</a></td>\
+  </body>\
 </html>\
 ";
 
@@ -159,8 +164,18 @@ web_setup()
       ESP.restart();
   });
 
-  server.on("/", HTTP_GET, [upload_html](AsyncWebServerRequest* request){
-            request->send(200, "text/html", upload_html);
+  size_t size = 1500;
+  char *Settings_temp = (char *)malloc(size);
+  if (Settings_temp == NULL) {
+    Serial.println("can't allocate memory for web ui"); Serial.flush();
+    return;
+  }
+  snprintf(Settings_temp, size, upload_html, GIT_VERSION);
+  String html = String(Settings_temp);
+  free(Settings_temp);
+
+  server.on("/", HTTP_GET, [html](AsyncWebServerRequest* request) {
+    request->send(200, "text/html", html);
   });
 
   server.on("/doUpload", HTTP_POST, [](AsyncWebServerRequest* request) {}, handleUpload);
