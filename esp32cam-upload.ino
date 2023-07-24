@@ -6,23 +6,13 @@ TO A SERVER USING HTTP MULTIPART POST
 
 #include <Arduino.h>
 #include <WiFi.h>
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "driver/rtc_io.h"
-
-String serverEndpoint = "/upload";        // Needs to match upload server endpoint
-String keyName = "\"myFile\"";            // Needs to match upload server keyName
-
 #include "wifi.h"
 #include "config.h"
 #include "spiffs.h"
 #include "web.h"
+#include "camera.h"
 
 #define FLASHLED_GPIO_NUM 4
-#define RTCLED_GPIO_NUM   GPIO_NUM_4
-#define DEBUGLED_GPIO_NUM 33
-
-#include "camera.h"
 
 #define mS_TO_S_FACTOR    1000        /* Conversion factor for mili seconds to seconds */
 #define uS_TO_S_FACTOR    1000000ULL  /* Conversion factor for micro seconds to seconds */
@@ -51,21 +41,7 @@ print_wakeup_reason()
   }
 }
 
-int picNumber = 0;
-String sdpath = "/images/";
-String picname = "image";
-String filext = ".jpg";
-
 void setup() {
-  
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-  rtc_gpio_hold_dis(RTCLED_GPIO_NUM);
-  esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
-  
-  // Turn off debug led
-  pinMode(DEBUGLED_GPIO_NUM, OUTPUT);
-  digitalWrite(DEBUGLED_GPIO_NUM, HIGH);
-  
   Serial.begin(115200);
 
   print_wakeup_reason();
