@@ -65,15 +65,16 @@ void setup() {
   // Turn off debug led
   pinMode(DEBUGLED_GPIO_NUM, OUTPUT);
   digitalWrite(DEBUGLED_GPIO_NUM, HIGH);
-  // Turns off the ESP32-CAM white on-board LED (flash)
-  pinMode(FLASHLED_GPIO_NUM, OUTPUT);
-  digitalWrite(FLASHLED_GPIO_NUM, LOW);
   
   Serial.begin(115200);
 
   print_wakeup_reason();
   if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
     photo_prev = 0;
+
+  // Turns off the ESP32-CAM white on-board LED (flash)
+  pinMode(FLASHLED_GPIO_NUM, OUTPUT);
+  digitalWrite(FLASHLED_GPIO_NUM, LOW);
 
   camera_setup();
 
@@ -96,7 +97,14 @@ void loop() {
             esp_deep_sleep_start();
         } else {
             /* don't sleep for time_to_reboot sec since boot */
-            if ((photo_current - photo_prev) > time_to_sleep_s * mS_TO_S_FACTOR) {
+            if (photo_prev == 0 ||
+                (photo_current - photo_prev) > time_to_sleep_s * mS_TO_S_FACTOR) {
+                // Turns on the ESP32-CAM white on-board LED (flash)
+                digitalWrite(FLASHLED_GPIO_NUM, HIGH);
+		delay(1);
+                // Turns off the ESP32-CAM white on-board LED (flash)
+                digitalWrite(FLASHLED_GPIO_NUM, LOW);
+
                 uploadPhoto();
                 photo_prev = photo_current;
             }
