@@ -7,6 +7,34 @@
 #define JSON_MAX 400
 #define CONFIG_FILE_NAME "/config.json"
 
+String
+show_config()
+{
+  File file = SPIFFS.open(CONFIG_FILE_NAME);
+  if (!file) {
+     Serial.print("can't open file for writing: ");
+     Serial.println(CONFIG_FILE_NAME);
+     return "";
+  }
+
+  StaticJsonDocument<JSON_MAX> obj;
+  DeserializationError error = deserializeJson(obj, file);
+  if (error) {
+     Serial.print("can't read json from ");
+     Serial.print(CONFIG_FILE_NAME);
+     Serial.print(": ");
+     Serial.println(error.c_str());
+     file.close();
+     return "";
+  }
+  file.close();
+
+  String output;
+  serializeJsonPretty(obj, output);
+
+  return output;
+}
+
 bool
 read_config()
 {
@@ -39,9 +67,6 @@ read_config()
   serverPort = obj["serverPort"];
   time_to_sleep_s = obj["time_to_sleep_s"];
   time_to_reboot = obj["time_to_reboot"];
-
-  serializeJsonPretty(obj, Serial);
-  Serial.println();
 
   return true;
 }

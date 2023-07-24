@@ -11,6 +11,7 @@
 extern int time_to_sleep_s;
 extern int time_to_reboot;
 
+String show_config();
 bool read_config();
 int save_config();
 void config_setup();

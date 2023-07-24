@@ -8,6 +8,7 @@
 #include "web.h"
 #include "spiffs.h"
 #include "git-version.h"
+#include "config.h"
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
@@ -34,8 +35,9 @@ static const char upload_html[] PROGMEM = "\
         <input type='submit' name='update' value='Update' title = 'Update Firmware'>\
       </form>\
     </div>\
-    <td><a href='format' class='button_format' >Format SPIFFS</a></td>\
-    <td><a href='reboot' class='button_reboot' >Reboot</a></td>\
+    <td><a href='config' style=margin:5px; class='button_config' >Config</a></td>\
+    <td><a href='format' style=margin:5px; class='button_format' >Format SPIFFS</a></td>\
+    <td><a href='reboot' style=margin:5px; class='button_reboot' >Reboot</a></td>\
   </body>\
 </html>\
 ";
@@ -67,6 +69,13 @@ web_setup()
 
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
+  });
+
+  server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request) {
+      Serial.printf("show config.json\n");
+      String output = show_config();
+      request->send(200, "text/plain", output);
+      request->redirect("/");
   });
 
   server.on("/format", HTTP_GET, [](AsyncWebServerRequest *request){
