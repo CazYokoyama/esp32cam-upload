@@ -17,6 +17,6 @@ extern String serverPath;
 extern int serverPort;
 extern WiFiClient client;
 
-void wifi_setup();
+wifi_mode_t wifi_setup();
 
 #endif _WIFI_H_
