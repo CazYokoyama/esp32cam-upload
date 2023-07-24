@@ -1,17 +1,12 @@
 #include <ArduinoOTA.h>
-#ifdef ESP32
 #include <FS.h>
 #include <SPIFFS.h>
 #include <ESPmDNS.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
-#elif defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
-#include <ESP8266mDNS.h>
-#endif
 #include <ESPAsyncWebSrv.h>
 #include <SPIFFSEditor.h>
+#include "web.h"
 
 // SKETCH BEGIN
 AsyncWebServer server(80);
@@ -90,26 +85,12 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   }
 }
 
-
-const char *ssid = "TP-Link_A8B1";
-const char *password = "36205110";
-const char * hostName = "esp-async";
 const char* http_username = "admin";
 const char* http_password = "admin";
 
-void setup(){
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAP(hostName);
-  WiFi.begin(ssid, password);
-  if (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.printf("STA: Failed!\n");
-    WiFi.disconnect(false);
-    delay(1000);
-    WiFi.begin(ssid, password);
-  }
-
+void
+web_setup()
+{
   //Send OTA events to the browser
   ArduinoOTA.onStart([]() { events.send("Update Start", "ota"); });
   ArduinoOTA.onEnd([]() { events.send("Update End", "ota"); });
@@ -130,8 +111,6 @@ void setup(){
 
   MDNS.addService("http","tcp",80);
 
-  SPIFFS.begin();
-
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
 
@@ -140,11 +119,7 @@ void setup(){
   });
   server.addHandler(&events);
 
-#ifdef ESP32
   server.addHandler(new SPIFFSEditor(SPIFFS, http_username,http_password));
-#elif defined(ESP8266)
-  server.addHandler(new SPIFFSEditor(http_username,http_password));
-#endif
   
   server.on("/heap", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", String(ESP.getFreeHeap()));
@@ -215,7 +190,8 @@ void setup(){
   server.begin();
 }
 
-void loop(){
+void web_loop()
+{
   ArduinoOTA.handle();
   ws.cleanupClients();
 }

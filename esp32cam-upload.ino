@@ -16,6 +16,7 @@ String keyName = "\"myFile\"";            // Needs to match upload server keyNam
 #include "wifi.h"
 #include "config.h"
 #include "spiffs.h"
+#include "web.h"
 
 #define FLASHLED_GPIO_NUM 4
 #define RTCLED_GPIO_NUM   GPIO_NUM_4
@@ -79,14 +80,14 @@ void setup() {
   config_setup();
   bool configExist = read_config();
   wifimode = wifi_setup(configExist);
+  web_setup();
 }
 
 void loop() {
-    unsigned long photo_current;
+    unsigned long photo_current = millis();
 
     switch (wifimode) {
     case WIFI_STA:
-        photo_current = millis();
         if (photo_prev >= time_to_reboot * mS_TO_S_FACTOR) {
             uploadPhoto();
             Serial.print("sleep for "); Serial.print(time_to_sleep_s);
@@ -99,10 +100,13 @@ void loop() {
                 uploadPhoto();
                 photo_prev = photo_current;
             }
+            web_loop();
         }
         break;
     case WIFI_AP:
-        delay(time_to_reboot * mS_TO_S_FACTOR);
+        if (photo_current >= time_to_reboot * mS_TO_S_FACTOR)
+          ESP.restart();
+        web_loop();
         break;
     default:
         delay(time_to_reboot * mS_TO_S_FACTOR);

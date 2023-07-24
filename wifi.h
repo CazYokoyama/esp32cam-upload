@@ -12,6 +12,7 @@
 
 extern String ssid;
 extern String password;
+extern char *hostName;
 extern String serverName;
 extern String serverPath;
 extern int serverPort;
