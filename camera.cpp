@@ -58,7 +58,18 @@ String uploadPhoto()
   camera_fb_t *pbuff = NULL;
 
   /* discard an image once to adjust white ballance */
-  // take the 1st frame and discard
+  // take a frame and discard
+  pbuff = esp_camera_fb_get();
+  if(!pbuff) {
+    Serial.println("Camera capture failed");
+    delay(1000);
+    Serial.println("reboot");
+    Serial.flush();
+    ESP.restart();
+  }
+  esp_camera_fb_return(pbuff);
+
+  delay(1000);
   pbuff = esp_camera_fb_get();
   if(!pbuff) {
     Serial.println("Camera capture failed");
