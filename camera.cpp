@@ -49,9 +49,15 @@ camera_setup()
     Serial.flush();
     ESP.restart();
   }
+}
+
+String uploadPhoto()
+{
+  String getAll = "";
+  String getBody = "";
+  camera_fb_t *pbuff = NULL;
 
   /* discard an image once to adjust white ballance */
-  camera_fb_t *pbuff = NULL;
   // take the 1st frame and discard
   pbuff = esp_camera_fb_get();
   if(!pbuff) {
@@ -62,15 +68,8 @@ camera_setup()
     ESP.restart();
   }
   esp_camera_fb_return(pbuff);
-}
 
-String uploadPhoto()
-{
-  String getAll;
-  String getBody;
-  camera_fb_t *pbuff = NULL;
-
-  Serial.println("Connecting to server: " + serverName);
+  delay(1000);
 
   pbuff = esp_camera_fb_get();
   if(!pbuff) {
@@ -80,6 +79,8 @@ String uploadPhoto()
     Serial.flush();
     ESP.restart();
   }
+
+  Serial.println("Connecting to server: " + serverName);
 
   if (client.connect(serverName.c_str(), serverPort)) {
     Serial.println("Connection successful!");
