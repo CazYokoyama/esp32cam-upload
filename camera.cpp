@@ -95,6 +95,10 @@ String uploadPhoto()
 
   if (client.connect(serverName.c_str(), serverPort)) {
     Serial.println("Connection successful!");
+    String ip_head = "--esp32cam-upload\r\nContent-Disposition: form-data; name=\"ip\"\r\n\r\n";
+    String ip_data = WiFi.localIP().toString();
+    String ip_tail = "\r\n--esp32cam-upload";
+
     String head = "\
 --esp32cam-upload\r\nContent-Disposition: form-data; name=\"imageFile\";\
  filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n\
@@ -102,13 +106,19 @@ String uploadPhoto()
     String tail = "\r\n--esp32cam-upload\r\n";
 
     uint32_t imageLen = pbuff->len;
-    uint32_t extraLen = head.length() + tail.length();
+    uint32_t extraLen = ip_head.length() + ip_data.length() + ip_tail.length() + head.length() + tail.length();
     uint32_t totalLen = imageLen + extraLen;
 
     client.println("POST " + serverPath + " HTTP/1.1");
     client.println("Host: " + serverName);
     client.println("Content-Length: " + String(totalLen));
     client.println("Content-Type: multipart/form-data; boundary=esp32cam-upload");
+
+    client.println();
+    client.print(ip_head);
+    client.print(ip_data);
+    client.print(ip_tail);
+
     client.println();
     client.print(head);
 
