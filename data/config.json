@@ -1,6 +1,12 @@
 {
-  "ssid": "YOUR_SSID",
-  "password": "YOUR_PASS",
+  "ssid": [
+    "YOUR_SSID0",
+    "YOUR_SSID1"
+  ],
+  "password": [
+    "YOUR_PASS0",
+    "YOUR_PASS0"
+  ],
   "hostName": "esp32cam",
   "ap_ssid": "esp32cam",
   "ap_password": "123456789",

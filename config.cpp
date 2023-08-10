@@ -4,7 +4,7 @@
 #include "spiffs.h"
 #include "config.h"
 
-#define JSON_MAX 400
+#define JSON_MAX 600
 #define CONFIG_FILE_NAME "/config.json"
 
 String
@@ -57,8 +57,10 @@ read_config()
   }
   file.close();
 
-  ssid = obj["ssid"].as<String>();
-  password = obj["password"].as<String>();
+  ssid[0] = obj["ssid"][0].as<String>();
+  ssid[1] = obj["ssid"][1].as<String>();
+  password[0] = obj["password"][0].as<String>();
+  password[1] = obj["password"][1].as<String>();
   hostName = obj["hostName"].as<String>();
   ap_ssid = obj["ap_ssid"].as<String>();
   ap_password = obj["ap_password"].as<String>();
@@ -76,8 +78,10 @@ save_config()
 {
   StaticJsonDocument<JSON_MAX> obj;
 
-  obj["ssid"] = ssid;
-  obj["password"] = password;
+  obj["ssid"][0] = ssid[0];
+  obj["ssid"][1] = ssid[1];
+  obj["password"][0] = password[0];
+  obj["password"][1] = password[1];
   obj["hostName"] = hostName;
   obj["ap_ssid"] = ap_ssid;
   obj["ap_password"] = ap_password;

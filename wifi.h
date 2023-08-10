@@ -6,12 +6,13 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiMulti.h>
 
 #define WIFI_TIMEOUT_S    30          /* Max WiFI waiting connection time (in seconds) */
 #define SERVER_TIMEOUT_S  10          /* Max response time waiting for server response */
 
-extern String ssid;
-extern String password;
+extern String ssid[];
+extern String password[];
 extern String hostName;
 extern String ap_ssid;
 extern String ap_password;
