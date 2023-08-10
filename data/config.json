@@ -1,8 +1,12 @@
 {
   "ssid": "YOUR_SSID",
   "password": "YOUR_PASS",
+  "hostName": "esp32cam",
+  "ap_ssid": "esp32cam",
+  "ap_password": "123456789",
   "serverName": "1.2.3.4",
   "serverPath": "/upload",
   "serverPort": 8080,
-  "time_to_sleep_s": 60
+  "time_to_sleep_s": 60,
+  "time_to_reboot": 600
 }

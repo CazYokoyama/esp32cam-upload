@@ -9,9 +9,9 @@ String password = "YOUR_PASS";
 String serverName = "1.2.3.4";
 String serverPath = "/upload";
 int serverPort = 8080;
-char *hostName = "esp32cam";
-char *ap_ssid = hostName;
-char *ap_password = "123456789";
+String hostName = "esp32cam";
+String ap_ssid = hostName;
+String ap_password = "123456789";
 
 #define MAX_RETRY 30
 
@@ -41,8 +41,8 @@ wifi_setup(bool configExist)
 
     /* start AP */
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(hostName);
-    WiFi.softAP(ap_ssid, ap_password);
+    WiFi.softAP(hostName.c_str());
+    WiFi.softAP(ap_ssid.c_str(), ap_password.c_str());
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: "); Serial.println(IP);
     return WIFI_MODE_AP;

@@ -31,10 +31,14 @@ read_config()
 
   ssid = obj["ssid"].as<String>();
   password = obj["password"].as<String>();
+  hostName = obj["hostName"].as<String>();
+  ap_ssid = obj["ap_ssid"].as<String>();
+  ap_password = obj["ap_password"].as<String>();
   serverName = obj["serverName"].as<String>();
   serverPath = obj["serverPath"].as<String>();
   serverPort = obj["serverPort"];
   time_to_sleep_s = obj["time_to_sleep_s"];
+  time_to_reboot = obj["time_to_reboot"];
 
   serializeJsonPretty(obj, Serial);
   Serial.println();
@@ -49,10 +53,14 @@ save_config()
 
   obj["ssid"] = ssid;
   obj["password"] = password;
+  obj["hostName"] = hostName;
+  obj["ap_ssid"] = ap_ssid;
+  obj["ap_password"] = ap_password;
   obj["serverName"] = serverName;
   obj["serverPath"] = serverPath;
   obj["serverPort"] = serverPort;
   obj["time_to_sleep_s"] = time_to_sleep_s;
+  obj["time_to_reboot"] = time_to_reboot;
 
   File file = SPIFFS.open(CONFIG_FILE_NAME, FILE_WRITE);
   if (!file){

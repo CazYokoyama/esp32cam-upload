@@ -12,7 +12,9 @@
 
 extern String ssid;
 extern String password;
-extern char *hostName;
+extern String hostName;
+extern String ap_ssid;
+extern String ap_password;
 extern String serverName;
 extern String serverPath;
 extern int serverPort;

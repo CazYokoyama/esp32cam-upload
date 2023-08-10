@@ -9,6 +9,7 @@
 #include "camera.h"
 
 extern int time_to_sleep_s;
+extern int time_to_reboot;
 
 bool read_config();
 int save_config();
