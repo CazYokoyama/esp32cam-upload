@@ -51,41 +51,44 @@ camera_setup()
   }
 }
 
-String uploadPhoto()
+camera_fb_t *
+capturePhoto()
 {
-  String getAll = "";
-  String getBody = "";
   camera_fb_t *pbuff = NULL;
 
   /* discard an image once to adjust white ballance */
   // take a frame and discard
   pbuff = esp_camera_fb_get();
-  if(!pbuff) {
-    Serial.println("Camera capture failed");
-    delay(1000);
-    Serial.println("reboot");
-    Serial.flush();
-    ESP.restart();
-  }
+  if (!pbuff)
+    return pbuff;
   esp_camera_fb_return(pbuff);
 
   delay(1000);
   pbuff = esp_camera_fb_get();
-  if(!pbuff) {
-    Serial.println("Camera capture failed");
-    delay(1000);
-    Serial.println("reboot");
-    Serial.flush();
-    ESP.restart();
-  }
+  if (!pbuff)
+    return pbuff;
   esp_camera_fb_return(pbuff);
 
   delay(1000);
-
   pbuff = esp_camera_fb_get();
-  if(!pbuff) {
+
+  return pbuff;
+}
+
+void
+releasePhoto(camera_fb_t *fb)
+{
+  esp_camera_fb_return(fb);
+}
+
+String uploadPhoto()
+{
+  String getAll = "";
+  String getBody = "";
+  camera_fb_t *pbuff = capturePhoto();
+
+  if (!pbuff) {
     Serial.println("Camera capture failed");
-    delay(1000);
     Serial.println("reboot");
     Serial.flush();
     ESP.restart();
@@ -135,8 +138,6 @@ String uploadPhoto()
     }
     client.print(tail);
 
-    esp_camera_fb_return(pbuff);
-
     int timoutTimer = SERVER_TIMEOUT_S * 1000;
     long startTimer = millis();
     boolean state = false;
@@ -166,5 +167,8 @@ String uploadPhoto()
     getBody = "Connection to " + serverName +  " failed.";
     Serial.println(getBody);
   }
+
+  releasePhoto(pbuff);
+
   return getBody;
 }
