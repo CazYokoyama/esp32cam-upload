@@ -63,13 +63,11 @@ capturePhoto()
     return pbuff;
   esp_camera_fb_return(pbuff);
 
-  delay(1000);
   pbuff = esp_camera_fb_get();
   if (!pbuff)
     return pbuff;
   esp_camera_fb_return(pbuff);
 
-  delay(1000);
   pbuff = esp_camera_fb_get();
 
   return pbuff;
