@@ -44,13 +44,21 @@ print_wakeup_reason()
 void setup() {
   Serial.begin(115200);
 
-  print_wakeup_reason();
-  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
-    photo_prev = 0;
-
   // Turns off the ESP32-CAM white on-board LED (flash)
   pinMode(FLASHLED_GPIO_NUM, OUTPUT);
   digitalWrite(FLASHLED_GPIO_NUM, LOW);
+
+  print_wakeup_reason();
+  if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_UNDEFINED)
+    photo_prev = 0;
+  else {
+    if (get_average_brightness() < day_night_threshold) { /* night */
+      Serial.print("sleep for "); Serial.print(time_to_sleep_s);
+      Serial.println(" sec."); Serial.flush();
+      esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
+       esp_deep_sleep_start();
+    }
+  }
 
   camera_setup();
 

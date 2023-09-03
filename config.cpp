@@ -3,6 +3,7 @@
 
 #include "spiffs.h"
 #include "config.h"
+#include "camera.h"
 
 #define JSON_MAX 600
 #define CONFIG_FILE_NAME "/config.json"
@@ -81,6 +82,8 @@ read_config()
     time_to_sleep_s = obj["time_to_sleep_s"];
   if (obj.containsKey(F("time_to_reboot")))
     time_to_reboot = obj["time_to_reboot"];
+  if (obj.containsKey(F("day_night_threshold")))
+    day_night_threshold = obj["day_night_threshold"];
 
   return true;
 }
@@ -102,6 +105,7 @@ save_config()
   obj["serverPort"] = serverPort;
   obj["time_to_sleep_s"] = time_to_sleep_s;
   obj["time_to_reboot"] = time_to_reboot;
+  obj["day_night_threshold"] = day_night_threshold;
 
   File file = SPIFFS.open(CONFIG_FILE_NAME, FILE_WRITE);
   if (!file){
