@@ -57,18 +57,30 @@ read_config()
   }
   file.close();
 
-  ssid[0] = obj["ssid"][0].as<String>();
-  ssid[1] = obj["ssid"][1].as<String>();
-  password[0] = obj["password"][0].as<String>();
-  password[1] = obj["password"][1].as<String>();
-  hostName = obj["hostName"].as<String>();
-  ap_ssid = obj["ap_ssid"].as<String>();
-  ap_password = obj["ap_password"].as<String>();
-  serverName = obj["serverName"].as<String>();
-  serverPath = obj["serverPath"].as<String>();
-  serverPort = obj["serverPort"];
-  time_to_sleep_s = obj["time_to_sleep_s"];
-  time_to_reboot = obj["time_to_reboot"];
+  if (obj.containsKey(F("ssid"))) {
+    ssid[0] = obj["ssid"][0].as<String>();
+    ssid[1] = obj["ssid"][1].as<String>();
+  }
+  if (obj.containsKey(F("password"))) {
+    password[0] = obj["password"][0].as<String>();
+    password[1] = obj["password"][1].as<String>();
+  }
+  if (obj.containsKey(F("hostName")))
+    hostName = obj["hostName"].as<String>();
+  if (obj.containsKey(F("ap_ssid")))
+    ap_ssid = obj["ap_ssid"].as<String>();
+  if (obj.containsKey(F("ap_password")))
+    ap_password = obj["ap_password"].as<String>();
+  if (obj.containsKey(F("serverName")))
+    serverName = obj["serverName"].as<String>();
+  if (obj.containsKey(F("serverPath")))
+    serverPath = obj["serverPath"].as<String>();
+  if (obj.containsKey(F("serverPort")))
+    serverPort = obj["serverPort"];
+  if (obj.containsKey(F("time_to_sleep_s")))
+    time_to_sleep_s = obj["time_to_sleep_s"];
+  if (obj.containsKey(F("time_to_reboot")))
+    time_to_reboot = obj["time_to_reboot"];
 
   return true;
 }
