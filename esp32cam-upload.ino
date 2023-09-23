@@ -74,7 +74,10 @@ void loop() {
     switch (wifimode) {
     case WIFI_STA:
         if (photo_prev >= time_to_reboot * mS_TO_S_FACTOR) {
+            Serial.printf("%s() %d: %lu %lu\n", __func__, __LINE__,
+                          photo_prev, photo_current);
             uploadPhoto();
+            photo_prev += photo_current + time_to_sleep_s;
             Serial.print("sleep for "); Serial.print(time_to_sleep_s);
             Serial.println(" sec."); Serial.flush();
             esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
