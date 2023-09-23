@@ -4,7 +4,7 @@
 #include "wifi.h"
 #include "camera.h"
 
-u8_t day_night_threshold = 0x30;
+u8_t day_night_threshold = 20; /* 20% may be an appropriate value */
 
 static void
 camera_common_config(camera_config_t *config)
@@ -60,6 +60,9 @@ camera_setup()
   }
 }
 
+/*
+ * return 0-100%
+ */
 int
 get_average_brightness()
 {
@@ -86,8 +89,9 @@ get_average_brightness()
   unsigned long b = 0;
   for (int t = 0; t++ < fb->len; )
     b += *data++;
-  b /= fb->len;
-  Serial.printf("%s() %d: %d\n", __func__, __LINE__,
+  b /= fb->len; /* average */
+  b = (b * 100) / 255; /* convert to percent */
+  Serial.printf("%s() %d: %d%%\n", __func__, __LINE__,
 		b);
 
   esp_camera_fb_return(fb);
