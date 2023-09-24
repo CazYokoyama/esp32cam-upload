@@ -56,7 +56,7 @@ void setup() {
       Serial.print("sleep for "); Serial.print(time_to_sleep_s);
       Serial.println(" sec."); Serial.flush();
       esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
-       esp_deep_sleep_start();
+      esp_deep_sleep_start();
     } else if (photo_prev >= 24 * 60 * 60 * mS_TO_S_FACTOR) {
       Serial.println("Reboot after a day");
       Serial.flush();
