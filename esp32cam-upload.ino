@@ -16,7 +16,7 @@ TO A SERVER USING HTTP MULTIPART POST
 
 #define mS_TO_S_FACTOR    1000        /* Conversion factor for mili seconds to seconds */
 #define uS_TO_S_FACTOR    1000000ULL  /* Conversion factor for micro seconds to seconds */
-int time_to_sleep_s = 60;      /* Time ESP32 will go to sleep (in seconds) */
+int time_to_sleep_s = 2 * 60;      /* Time ESP32 will go to sleep (in seconds) */
 int time_to_reboot = 10 * 60;  /* Time to reboot on AP mode (in seconds) */
 
 RTC_NOINIT_ATTR static unsigned long photo_prev = 0;
