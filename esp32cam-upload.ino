@@ -18,6 +18,7 @@ TO A SERVER USING HTTP MULTIPART POST
 #define uS_TO_S_FACTOR    1000000ULL  /* Conversion factor for micro seconds to seconds */
 int time_to_sleep_s = 2 * 60;      /* Time ESP32 will go to sleep (in seconds) */
 int time_to_reboot = 10 * 60;  /* Time to reboot on AP mode (in seconds) */
+RTC_NOINIT_ATTR int sleep_in_night = 10 * 60;
 
 RTC_NOINIT_ATTR static unsigned long photo_prev = 0;
 wifi_mode_t wifimode = WIFI_MODE_NULL;
@@ -53,9 +54,9 @@ void setup() {
     photo_prev = 0;
   else {
     if (get_average_brightness() < day_night_threshold) { /* night */
-      Serial.print("sleep for "); Serial.print(time_to_sleep_s);
+      Serial.print("sleep for "); Serial.print(sleep_in_night);
       Serial.println(" sec."); Serial.flush();
-      esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
+      esp_sleep_enable_timer_wakeup(sleep_in_night * uS_TO_S_FACTOR);
       esp_deep_sleep_start();
     } else if (photo_prev >= 24 * 60 * 60 * mS_TO_S_FACTOR) {
       Serial.println("Reboot after a day");

@@ -10,6 +10,7 @@
 
 extern int time_to_sleep_s;
 extern int time_to_reboot;
+extern int sleep_in_night;
 
 String show_config();
 bool read_config();

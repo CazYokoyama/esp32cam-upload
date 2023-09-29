@@ -82,6 +82,8 @@ read_config()
     time_to_sleep_s = obj["time_to_sleep_s"];
   if (obj.containsKey(F("time_to_reboot")))
     time_to_reboot = obj["time_to_reboot"];
+  if (obj.containsKey(F("sleep_in_night")))
+    sleep_in_night = obj["sleep_in_night"];
   if (obj.containsKey(F("day_night_threshold")))
     day_night_threshold = obj["day_night_threshold"];
 
@@ -105,6 +107,7 @@ save_config()
   obj["serverPort"] = serverPort;
   obj["time_to_sleep_s"] = time_to_sleep_s;
   obj["time_to_reboot"] = time_to_reboot;
+  obj["sleep_in_night"] = sleep_in_night;
   obj["day_night_threshold"] = day_night_threshold;
 
   File file = SPIFFS.open(CONFIG_FILE_NAME, FILE_WRITE);
