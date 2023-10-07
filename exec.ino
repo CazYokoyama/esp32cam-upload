@@ -133,32 +133,6 @@ int verify_knownhost(ssh_session session)
         /* fallback to SSH_SERVER_NOT_KNOWN behavior */
         FALL_THROUGH;
     case SSH_SERVER_NOT_KNOWN:
-        fprintf(stderr,
-                "The server is unknown. Do you trust the host key (yes/no)?\n");
-        ssh_print_hash(SSH_PUBLICKEY_HASH_SHA256, hash, hlen);
-
-        if (fgets(buf, sizeof(buf), stdin) == NULL) {
-            ssh_clean_pubkey_hash(&hash);
-            return -1;
-        }
-        if(strncasecmp(buf,"yes",3)!=0){
-            ssh_clean_pubkey_hash(&hash);
-            return -1;
-        }
-        fprintf(stderr,"This new key will be written on disk for further usage. do you agree ?\n");
-        if (fgets(buf, sizeof(buf), stdin) == NULL) {
-            ssh_clean_pubkey_hash(&hash);
-            return -1;
-        }
-        if(strncasecmp(buf,"yes",3)==0){
-            rc = ssh_session_update_known_hosts(session);
-            if (rc != SSH_OK) {
-                ssh_clean_pubkey_hash(&hash);
-                fprintf(stderr, "error %s\n", strerror(errno));
-                return -1;
-            }
-        }
-
         break;
     case SSH_KNOWN_HOSTS_ERROR:
         ssh_clean_pubkey_hash(&hash);
@@ -458,6 +432,7 @@ ssh_session connect_ssh(const char *host, const char *user,int verbosity){
     return NULL;
   }
   ssh_options_set(session, SSH_OPTIONS_LOG_VERBOSITY, &verbosity);
+  ssh_options_set(session, SSH_OPTIONS_SSH_DIR, "/spiffs");
   if(ssh_connect(session)){
     fprintf(stderr,"Connection failed : %s\n",ssh_get_error(session));
     ssh_disconnect(session);
@@ -491,7 +466,7 @@ int ex_main(int argc, char **argv){
     int rbytes, wbytes, total = 0;
     int rc;
 
-    session = connect_ssh("localhost", NULL, 0);
+    session = connect_ssh("10.0.0.103", "caz", 0);
     if (session == NULL) {
         ssh_finalize();
         return 1;
@@ -510,7 +485,7 @@ int ex_main(int argc, char **argv){
         goto failed;
     }
 
-    rc = ssh_channel_request_exec(channel, "lsof");
+    rc = ssh_channel_request_exec(channel, "ls");
     if (rc < 0) {
         goto failed;
     }
