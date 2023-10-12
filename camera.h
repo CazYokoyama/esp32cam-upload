@@ -32,6 +32,6 @@ extern u8_t day_night_threshold;
 
 void camera_setup();
 int get_average_brightness();
-String uploadPhoto();
+void uploadPhoto();
 
 #endif _CAMERA_H_

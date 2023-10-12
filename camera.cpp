@@ -128,10 +128,9 @@ releasePhoto(camera_fb_t *fb)
   esp_camera_fb_return(fb);
 }
 
-String uploadPhoto()
+void
+uploadPhoto()
 {
-  String getAll = "";
-  String getBody = "";
   camera_fb_t *pbuff = capturePhoto();
 
   if (!pbuff) {
@@ -141,81 +140,5 @@ String uploadPhoto()
     ESP.restart();
   }
 
-  Serial.println("Connecting to server: " + serverName);
-
-  if (client.connect(serverName.c_str(), serverPort)) {
-    Serial.println("Connection successful!");
-    String ip_head = "--esp32cam-upload\r\nContent-Disposition: form-data; name=\"ip\"\r\n\r\n";
-    String ip_data = WiFi.localIP().toString();
-    String ip_tail = "\r\n--esp32cam-upload";
-
-    String head = "\
---esp32cam-upload\r\nContent-Disposition: form-data; name=\"imageFile\";\
- filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n\
-";
-    String tail = "\r\n--esp32cam-upload\r\n";
-
-    uint32_t imageLen = pbuff->len;
-    uint32_t extraLen = ip_head.length() + ip_data.length() + ip_tail.length() + head.length() + tail.length();
-    uint32_t totalLen = imageLen + extraLen;
-
-    client.println("POST " + serverPath + " HTTP/1.1");
-    client.println("Host: " + serverName);
-    client.println("Content-Length: " + String(totalLen));
-    client.println("Content-Type: multipart/form-data; boundary=esp32cam-upload");
-
-    client.println();
-    client.print(ip_head);
-    client.print(ip_data);
-    client.print(ip_tail);
-
-    client.println();
-    client.print(head);
-
-    uint8_t *fbBuf = pbuff->buf;
-    size_t fbLen = pbuff->len;
-    for (size_t n = 0; n < fbLen; n = n + 1024) {
-      if (n + 1024 < fbLen) {
-        client.write(fbBuf, 1024);
-        fbBuf += 1024;
-      } else if (fbLen % 1024 > 0) {
-        size_t remainder = fbLen % 1024;
-        client.write(fbBuf, remainder);
-      }
-    }
-    client.print(tail);
-
-    int timoutTimer = SERVER_TIMEOUT_S * 1000;
-    long startTimer = millis();
-    boolean state = false;
-
-    while ((startTimer + timoutTimer) > millis()) {
-      Serial.print(".");
-      delay(100);
-      while (client.available()) {
-        char c = client.read();
-        if (c == '\n') {
-          if (getAll.length() == 0)
-            state = true;
-          getAll = "";
-        } else if (c != '\r')
-          getAll += String(c);
-        if (state)
-          getBody += String(c);
-        startTimer = millis();
-      }
-      if (getBody.length() > 0)
-        break;
-    }
-    Serial.println();
-    client.stop();
-    Serial.println(getBody);
-  } else {
-    getBody = "Connection to " + serverName +  " failed.";
-    Serial.println(getBody);
-  }
-
   releasePhoto(pbuff);
-
-  return getBody;
 }
