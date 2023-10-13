@@ -12,6 +12,9 @@ TO A SERVER USING HTTP MULTIPART POST
 #include "web.h"
 #include "camera.h"
 
+#include "libssh_esp32.h"
+#include "examples_common.h"
+
 #define FLASHLED_GPIO_NUM 4
 
 #define mS_TO_S_FACTOR    1000        /* Conversion factor for mili seconds to seconds */
@@ -71,6 +74,7 @@ void setup() {
   bool configExist = read_config();
   wifimode = wifi_setup(configExist);
   web_setup();
+  ssh_setup();
 }
 
 void loop() {

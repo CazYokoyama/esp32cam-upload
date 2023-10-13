@@ -8,17 +8,12 @@
 
 /* simple exec example */
 
-// Set local WiFi credentials below.
-const char *configSTASSID = "YourWiFiSSID";
-const char *configSTAPSK = "YourWiFiPSK";
-
 // The command line you would use to run this from a shell prompt.
 #define EX_CMD "exec"
 
 // Stack size needed to run SSH and the command parser.
 const unsigned int configSTACK = 51200;
 
-#include "IPv6Address.h"
 #include "WiFi.h"
 // Include the Arduino library.
 #include "libssh_esp32.h"
@@ -28,31 +23,7 @@ const unsigned int configSTACK = 51200;
 #include "examples_common.h"
 // EXAMPLE includes/defines FINISH
 
-volatile bool wifiPhyConnected;
-
-// Timing and timeout configuration.
-#define WIFI_TIMEOUT_S 10
-#define NET_WAIT_MS 100
-
-// Networking state of this esp32 device.
-typedef enum
-{
-  STATE_NEW,
-  STATE_PHY_CONNECTED,
-  STATE_WAIT_IPADDR,
-  STATE_GOT_IPADDR,
-  STATE_OTA_UPDATING,
-  STATE_OTA_COMPLETE,
-  STATE_LISTENING,
-  STATE_TCP_DISCONNECTED
-} devState_t;
-
-static volatile devState_t devState;
-static volatile bool gotIpAddr, gotIp6Addr;
-
-#include "SPIFFS.h"
-#include "driver/uart.h"
-#include "esp_vfs_dev.h"
+#include "camera.h"
 
 // EXAMPLE functions START
 /*
@@ -74,20 +45,7 @@ The goal is to show the API in action. It's not a reference on how terminal
 clients must be made or how a client should react.
  */
 
-#include "libssh_esp32_config.h"
-
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "libssh/priv.h"
-#include <libssh/libssh.h>
-#include "examples_common.h"
-
-#ifdef _WIN32
-#define strncasecmp _strnicmp
-#endif
 
 int verify_knownhost(ssh_session session)
 {
@@ -173,114 +131,6 @@ clients must be made or how a client should react.
 #include <libssh/libssh.h>
 #include "examples_common.h"
 
-int authenticate_kbdint(ssh_session session, const char *password)
-{
-    int err;
-
-    err = ssh_userauth_kbdint(session, NULL, NULL);
-    while (err == SSH_AUTH_INFO) {
-        const char *instruction;
-        const char *name;
-        char buffer[128];
-        int i, n;
-
-        name = ssh_userauth_kbdint_getname(session);
-        instruction = ssh_userauth_kbdint_getinstruction(session);
-        n = ssh_userauth_kbdint_getnprompts(session);
-
-        if (name && strlen(name) > 0) {
-            printf("%s\n", name);
-        }
-
-        if (instruction && strlen(instruction) > 0) {
-            printf("%s\n", instruction);
-        }
-
-        for (i = 0; i < n; i++) {
-            const char *answer;
-            const char *prompt;
-            char echo;
-
-            prompt = ssh_userauth_kbdint_getprompt(session, i, &echo);
-            if (prompt == NULL) {
-                break;
-            }
-
-            if (echo) {
-                char *p;
-
-                printf("%s", prompt);
-
-                if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-                    return SSH_AUTH_ERROR;
-                }
-
-                buffer[sizeof(buffer) - 1] = '\0';
-                if ((p = strchr(buffer, '\n'))) {
-                    *p = '\0';
-                }
-
-                if (ssh_userauth_kbdint_setanswer(session, i, buffer) < 0) {
-                    return SSH_AUTH_ERROR;
-                }
-
-                memset(buffer, 0, strlen(buffer));
-            } else {
-                if (password && strstr(prompt, "Password:")) {
-                    answer = password;
-                } else {
-                    buffer[0] = '\0';
-
-                    if (ssh_getpass(prompt, buffer, sizeof(buffer), 0, 0) < 0) {
-                        return SSH_AUTH_ERROR;
-                    }
-                    answer = buffer;
-                }
-                err = ssh_userauth_kbdint_setanswer(session, i, answer);
-                memset(buffer, 0, sizeof(buffer));
-                if (err < 0) {
-                    return SSH_AUTH_ERROR;
-                }
-            }
-        }
-        err=ssh_userauth_kbdint(session,NULL,NULL);
-    }
-
-    return err;
-}
-
-static int auth_keyfile(ssh_session session, char* keyfile)
-{
-    ssh_key key = NULL;
-    char pubkey[132] = {0}; // +".pub"
-    int rc;
-
-    snprintf(pubkey, sizeof(pubkey), "%s.pub", keyfile);
-
-    rc = ssh_pki_import_pubkey_file( pubkey, &key);
-
-    if (rc != SSH_OK)
-        return SSH_AUTH_DENIED;
-
-    rc = ssh_userauth_try_publickey(session, NULL, key);
-
-    ssh_key_free(key);
-
-    if (rc!=SSH_AUTH_SUCCESS)
-        return SSH_AUTH_DENIED;
-
-    rc = ssh_pki_import_privkey_file(keyfile, NULL, NULL, NULL, &key);
-
-    if (rc != SSH_OK)
-        return SSH_AUTH_DENIED;
-
-    rc = ssh_userauth_publickey(session, NULL, key);
-    ssh_key_free(key);
-
-    return rc;
-}
-
-
 static void error(ssh_session session)
 {
     fprintf(stderr,"Authentication failed: %s\n",ssh_get_error(session));
@@ -290,7 +140,6 @@ int authenticate_console(ssh_session session)
 {
     int rc;
     int method;
-    char password[128] = {0};
     char *banner;
 
     // Try to authenticate
@@ -301,84 +150,25 @@ int authenticate_console(ssh_session session)
     }
 
     method = ssh_userauth_list(session, NULL);
-    while (rc != SSH_AUTH_SUCCESS) {
-        if (method & SSH_AUTH_METHOD_GSSAPI_MIC){
-            rc = ssh_userauth_gssapi(session);
-            if(rc == SSH_AUTH_ERROR) {
-                error(session);
-                return rc;
-            } else if (rc == SSH_AUTH_SUCCESS) {
-                break;
-            }
-        }
-        // Try to authenticate with public key first
-        if (method & SSH_AUTH_METHOD_PUBLICKEY) {
-            rc = ssh_userauth_publickey_auto(session, NULL, NULL);
-            if (rc == SSH_AUTH_ERROR) {
-                error(session);
-                return rc;
-            } else if (rc == SSH_AUTH_SUCCESS) {
-                break;
-            }
-        }
-        {
-            char buffer[128] = {0};
-            char *p = NULL;
-
-            printf("Automatic pubkey failed. "
-                   "Do you want to try a specific key? (y/n)\n");
-            if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-                break;
-            }
-            if ((buffer[0]=='Y') || (buffer[0]=='y')) {
-                printf("private key filename: ");
-
-                if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
-                    return SSH_AUTH_ERROR;
-                }
-
-                buffer[sizeof(buffer) - 1] = '\0';
-                if ((p = strchr(buffer, '\n'))) {
-                    *p = '\0';
-                }
-
-                rc = auth_keyfile(session, buffer);
-
-                if(rc == SSH_AUTH_SUCCESS) {
-                    break;
-                }
-                fprintf(stderr, "failed with key\n");
-            }
-        }
-
-        // Try to authenticate with keyboard interactive";
-        if (method & SSH_AUTH_METHOD_INTERACTIVE) {
-            rc = authenticate_kbdint(session, NULL);
-            if (rc == SSH_AUTH_ERROR) {
-                error(session);
-                return rc;
-            } else if (rc == SSH_AUTH_SUCCESS) {
-                break;
-            }
-        }
-
-        if (ssh_getpass("Password: ", password, sizeof(password), 0, 0) < 0) {
-            return SSH_AUTH_ERROR;
-        }
-
-        // Try to authenticate with password
-        if (method & SSH_AUTH_METHOD_PASSWORD) {
-            rc = ssh_userauth_password(session, NULL, password);
-            if (rc == SSH_AUTH_ERROR) {
-                error(session);
-                return rc;
-            } else if (rc == SSH_AUTH_SUCCESS) {
-                break;
-            }
-        }
-        memset(password, 0, sizeof(password));
+    if (method & SSH_AUTH_METHOD_GSSAPI_MIC) {
+      rc = ssh_userauth_gssapi(session);
+      if (rc == SSH_AUTH_ERROR) {
+	error(session);
+	return rc;
+      } else if (rc == SSH_AUTH_SUCCESS)
+	goto return_success;
     }
 
+    // Try to authenticate with public key first
+    if (method & SSH_AUTH_METHOD_PUBLICKEY) {
+      rc = ssh_userauth_publickey_auto(session, NULL, NULL);
+      if (rc == SSH_AUTH_ERROR) {
+	error(session);
+	return rc;
+      }
+    }
+
+ return_success:
     banner = ssh_get_issue_banner(session);
     if (banner) {
         printf("%s\n",banner);
@@ -536,132 +326,10 @@ failed:
 }
 // EXAMPLE main FINISH
 
-#define newDevState(s) (devState = s)
-
-esp_err_t event_cb(void *ctx, system_event_t *event)
-{
-  switch(event->event_id)
-  {
-    case SYSTEM_EVENT_STA_START:
-      //#if ESP_IDF_VERSION_MAJOR < 4
-      //WiFi.setHostname("libssh_esp32");
-      //#endif
-      Serial.print("% WiFi enabled with SSID=");
-      Serial.println(configSTASSID);
-      break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-      WiFi.enableIpV6();
-      wifiPhyConnected = true;
-      if (devState < STATE_PHY_CONNECTED) newDevState(STATE_PHY_CONNECTED);
-      break;
-    case SYSTEM_EVENT_GOT_IP6:
-      if (event->event_info.got_ip6.ip6_info.ip.addr[0] != htons(0xFE80)
-      && !gotIp6Addr)
-      {
-        gotIp6Addr = true;
-      }
-      Serial.print("% IPv6 Address: ");
-      Serial.println(IPv6Address(event->event_info.got_ip6.ip6_info.ip.addr));
-      break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-      gotIpAddr = true;
-      Serial.print("% IPv4 Address: ");
-      Serial.println(IPAddress(event->event_info.got_ip.ip_info.ip.addr));
-      break;
-    case SYSTEM_EVENT_STA_LOST_IP:
-      //gotIpAddr = false;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-      if (devState < STATE_WAIT_IPADDR) newDevState(STATE_NEW);
-      if (wifiPhyConnected)
-      {
-        wifiPhyConnected = false;
-      }
-      WiFi.begin(configSTASSID, configSTAPSK);
-      break;
-    default:
-      break;
-  }
-  return ESP_OK;
-}
-
 void controlTask(void *pvParameter)
 {
-  // Mount the file system.
-  boolean fsGood = SPIFFS.begin();
-  if (!fsGood)
-  {
-    printf("%% No formatted SPIFFS filesystem found to mount.\n");
-    printf("%% Format SPIFFS and mount now (NB. may cause data loss) [y/n]?\n");
-    while (!Serial.available()) {}
-    char c = Serial.read();
-    if (c == 'y' || c == 'Y')
-    {
-      printf("%% Formatting...\n");
-      fsGood = SPIFFS.format();
-      if (fsGood) SPIFFS.begin();
-    }
-  }
-  if (!fsGood)
-  {
-    printf("%% Aborting now.\n");
-    while (1) vTaskDelay(60000 / portTICK_PERIOD_MS);
-  }
-  printf(
-    "%% Mounted SPIFFS used=%d total=%d\r\n", SPIFFS.usedBytes(),
-    SPIFFS.totalBytes());
-
-  wifiPhyConnected = false;
-  WiFi.disconnect(true);
-  WiFi.mode(WIFI_MODE_STA);
-  gotIpAddr = false; gotIp6Addr = false;
-  WiFi.begin(configSTASSID, configSTAPSK);
-
-  TickType_t xStartTime;
-  xStartTime = xTaskGetTickCount();
-  const TickType_t xTicksTimeout = WIFI_TIMEOUT_S*1000/portTICK_PERIOD_MS;
-  bool aborting;
-
   while (1)
   {
-    switch (devState)
-    {
-      case STATE_NEW :
-        vTaskDelay(NET_WAIT_MS / portTICK_PERIOD_MS);
-        break;
-      case STATE_PHY_CONNECTED :
-        newDevState(STATE_WAIT_IPADDR);
-        // Set the initial time, where timeout will be started
-        xStartTime = xTaskGetTickCount();
-        break;
-      case STATE_WAIT_IPADDR :
-        if (gotIpAddr && gotIp6Addr)
-          newDevState(STATE_GOT_IPADDR);
-        else
-        {
-          // Check the timeout.
-          if (xTaskGetTickCount() >= xStartTime + xTicksTimeout)
-          {
-            printf("%% Timeout waiting for IP address\n");
-            if (gotIpAddr || gotIp6Addr)
-              newDevState(STATE_GOT_IPADDR);
-            else
-              newDevState(STATE_NEW);
-          }
-          else
-          {
-            vTaskDelay(NET_WAIT_MS / portTICK_PERIOD_MS);
-          }
-        }
-        break;
-      case STATE_GOT_IPADDR :
-        newDevState(STATE_OTA_UPDATING);
-        break;
-      case STATE_OTA_UPDATING :
-        // No OTA for this sketch.
-        newDevState(STATE_OTA_COMPLETE);
-        break;
-      case STATE_OTA_COMPLETE :
-        aborting = false;
         // Initialize the Arduino library.
         libssh_begin();
 
@@ -676,59 +344,12 @@ void controlTask(void *pvParameter)
           printf("\n%% Execution completed: rc=%d\n", ex_rc);
         }
         while (1) vTaskDelay(60000 / portTICK_PERIOD_MS);
-        // Finished the EXAMPLE main code.
-        if (!aborting)
-          newDevState(STATE_LISTENING);
-        else
-          newDevState(STATE_TCP_DISCONNECTED);
-        break;
-      case STATE_LISTENING :
-        aborting = false;
-        newDevState(STATE_TCP_DISCONNECTED);
-        break;
-      case STATE_TCP_DISCONNECTED :
-        // This would be the place to free net resources, if needed,
-        newDevState(STATE_LISTENING);
-        break;
-      default :
-        break;
-    }
   }
 }
 
-void setup()
+void ssh_setup()
 {
-  devState = STATE_NEW;
-
-  // Use the expected blocking I/O behavior.
-  setvbuf(stdin, NULL, _IONBF, 0);
-  setvbuf(stdout, NULL, _IONBF, 0);
-  #if ESP_IDF_VERSION_MAJOR >= 4
-  Serial.begin(115200);
-  uart_driver_install
-    ((uart_port_t)CONFIG_ESP_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0);
-  esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
-  #else
-  uart_driver_install((uart_port_t)CONFIG_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0);
-  esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
-  Serial.begin(115200);
-  #endif
-
-  #if ESP_IDF_VERSION_MAJOR >= 4
-  //WiFi.setHostname("libssh_esp32");
-  esp_netif_init();
-  #else
-  tcpip_adapter_init();
-  #endif
-  esp_event_loop_init(event_cb, NULL);
-
   // Stack size needs to be larger, so continue in a new task.
   xTaskCreatePinnedToCore(controlTask, "ctl", configSTACK, NULL,
     (tskIDLE_PRIORITY + 3), NULL, portNUM_PROCESSORS - 1);
-}
-
-void loop()
-{
-  // Nothing to do here since controlTask has taken over.
-  vTaskDelay(60000 / portTICK_PERIOD_MS);
 }
