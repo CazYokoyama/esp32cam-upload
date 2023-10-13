@@ -76,8 +76,8 @@ read_config()
     serverName = obj["serverName"].as<String>();
   if (obj.containsKey(F("serverPath")))
     serverPath = obj["serverPath"].as<String>();
-  if (obj.containsKey(F("serverPort")))
-    serverPort = obj["serverPort"];
+  if (obj.containsKey(F("serverUser")))
+    serverUser = obj["serverUser"].as<String>();
   if (obj.containsKey(F("time_to_sleep_s")))
     time_to_sleep_s = obj["time_to_sleep_s"];
   if (obj.containsKey(F("time_to_reboot")))
@@ -104,7 +104,7 @@ save_config()
   obj["ap_password"] = ap_password;
   obj["serverName"] = serverName;
   obj["serverPath"] = serverPath;
-  obj["serverPort"] = serverPort;
+  obj["serverUser"] = serverUser;
   obj["time_to_sleep_s"] = time_to_sleep_s;
   obj["time_to_reboot"] = time_to_reboot;
   obj["sleep_in_night"] = sleep_in_night;

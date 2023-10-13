@@ -14,7 +14,7 @@ String password[] = {
 
 String serverName = "1.2.3.4";
 String serverPath = "/upload";
-int serverPort = 8080;
+String serverUser = "esp32cam";
 String hostName = "esp32cam";
 String ap_ssid = hostName;
 String ap_password = "123456789";

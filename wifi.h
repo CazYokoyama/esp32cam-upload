@@ -18,7 +18,7 @@ extern String ap_ssid;
 extern String ap_password;
 extern String serverName;
 extern String serverPath;
-extern int serverPort;
+extern String serverUser;
 extern WiFiClient client;
 
 wifi_mode_t wifi_setup(bool configExist);

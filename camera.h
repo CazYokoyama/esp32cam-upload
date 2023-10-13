@@ -29,9 +29,12 @@
 #define DEBUGLED_GPIO_NUM 33
 
 extern u8_t day_night_threshold;
+extern volatile bool sendPhoto;
 
 void camera_setup();
 int get_average_brightness();
+camera_fb_t *capturePhoto();
+void releasePhoto(camera_fb_t *fb);
 void uploadPhoto();
 
 #endif _CAMERA_H_

@@ -5,6 +5,7 @@
 #include "camera.h"
 
 u8_t day_night_threshold = 20; /* 20% may be an appropriate value */
+volatile bool sendPhoto = false;
 
 static void
 camera_common_config(camera_config_t *config)
@@ -131,14 +132,9 @@ releasePhoto(camera_fb_t *fb)
 void
 uploadPhoto()
 {
-  camera_fb_t *pbuff = capturePhoto();
 
-  if (!pbuff) {
-    Serial.println("Camera capture failed");
-    Serial.println("reboot");
-    Serial.flush();
-    ESP.restart();
-  }
+  sendPhoto = true;
 
-  releasePhoto(pbuff);
+  while (sendPhoto)
+    delay(1 * 1000); /* check whether finish uploading every 1 sec */
 }

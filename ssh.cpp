@@ -24,6 +24,7 @@ const unsigned int configSTACK = 51200;
 // EXAMPLE includes/defines FINISH
 
 #include "camera.h"
+#include "wifi.h"
 
 // EXAMPLE functions START
 /*
@@ -248,19 +249,85 @@ ssh_session connect_ssh(const char *host, const char *user,int verbosity){
 }
 // EXAMPLE functions FINISH
 
+#define MAX_WRITE_SIZE (8 * 1024)
+
+int
+uploadByScp(ssh_session session, camera_fb_t *pbuff)
+{
+  ssh_scp scp;
+  uint8_t *p;
+  size_t len;
+  int rc = SSH_OK;
+
+  scp = ssh_scp_new(session, SSH_SCP_WRITE, serverPath.c_str());
+  if (scp == NULL) {
+    Serial.printf("Error allocating scp session: %s\n",
+            ssh_get_error(session));
+    rc = SSH_ERROR;
+    goto return_return;
+  }
+  rc = ssh_scp_init(scp);
+  if (rc != SSH_OK) {
+    Serial.printf("Error initializing scp session: %s\n",
+            ssh_get_error(session));
+    goto return_scp_free;
+  }
+  rc = ssh_scp_push_file
+    (scp, "esp32-cam.jpg", pbuff->len, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  if (rc != SSH_OK) {
+    Serial.printf("Can't open remote file: %s\n",
+            ssh_get_error(session));
+    goto return_scp;
+  }
+
+  p = pbuff->buf;
+  len = pbuff->len;
+  do {
+    if (len > MAX_WRITE_SIZE) {
+      rc = ssh_scp_write(scp, p, MAX_WRITE_SIZE);
+      p +=  MAX_WRITE_SIZE;
+      len -=  MAX_WRITE_SIZE;
+    } else {
+      rc = ssh_scp_write(scp, p, len);
+      len = 0;
+    }
+
+    if (rc != SSH_OK)
+      Serial.printf("Can't write to remote file: %s\n",
+		    ssh_get_error(session));
+  } while (len > 0);
+
+ return_scp:
+  ssh_scp_close(scp);
+ return_scp_free:
+  ssh_scp_free(scp);
+ return_return:
+
+  return rc;
+}
+
 // EXAMPLE main START
 int ex_main(int argc, char **argv){
+    camera_fb_t *pbuff;
     ssh_session session;
     ssh_channel channel;
     char buffer[256];
     int rbytes, wbytes, total = 0;
     int rc;
 
-    session = connect_ssh("10.0.0.103", "caz", 0);
+    pbuff = capturePhoto();
+    if (!pbuff) {
+      Serial.println("Camera capture failed");
+      goto error_return;
+    }
+
+    session = connect_ssh(serverName.c_str(), serverUser.c_str(), 0);
     if (session == NULL) {
         ssh_finalize();
         return 1;
     }
+
+    uploadByScp(session, pbuff);
 
     channel = ssh_channel_new(session);
     if (channel == NULL) {
@@ -275,7 +342,10 @@ int ex_main(int argc, char **argv){
         goto failed;
     }
 
-    rc = ssh_channel_request_exec(channel, "ls");
+    snprintf(buffer, sizeof(buffer),
+	     "cd %s; php ScpUpload.php esp32-cam.jpg %s",
+	     serverPath.c_str(), WiFi.localIP().toString().c_str());
+    rc = ssh_channel_request_exec(channel, buffer);
     if (rc < 0) {
         goto failed;
     }
@@ -313,6 +383,7 @@ int ex_main(int argc, char **argv){
     ssh_disconnect(session);
     ssh_free(session);
     ssh_finalize();
+    releasePhoto(pbuff);
 
     return 0;
 failed:
@@ -321,7 +392,8 @@ failed:
     ssh_disconnect(session);
     ssh_free(session);
     ssh_finalize();
-
+    releasePhoto(pbuff);
+ error_return:
     return 1;
 }
 // EXAMPLE main FINISH
@@ -330,6 +402,7 @@ void controlTask(void *pvParameter)
 {
   while (1)
   {
+    if (sendPhoto) {
         // Initialize the Arduino library.
         libssh_begin();
 
@@ -337,13 +410,11 @@ void controlTask(void *pvParameter)
         {
           char *ex_argv[] = { EX_CMD, NULL };
           int ex_argc = sizeof ex_argv/sizeof ex_argv[0] - 1;
-          printf("%% Execution in progress:");
-          short a; for (a = 0; a < ex_argc; a++) printf(" %s", ex_argv[a]);
-          printf("\n\n");
           int ex_rc = ex_main(ex_argc, ex_argv);
-          printf("\n%% Execution completed: rc=%d\n", ex_rc);
         }
-        while (1) vTaskDelay(60000 / portTICK_PERIOD_MS);
+        sendPhoto = false;
+    }
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
 }
 
