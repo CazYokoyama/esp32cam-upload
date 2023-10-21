@@ -10,6 +10,7 @@
 
 // The command line you would use to run this from a shell prompt.
 #define EX_CMD "exec"
+#define JPG_IMAGE "esp32-cam.jpg"
 
 // Stack size needed to run SSH and the command parser.
 const unsigned int configSTACK = 51200;
@@ -273,7 +274,7 @@ uploadByScp(ssh_session session, camera_fb_t *pbuff)
     goto return_scp_free;
   }
   rc = ssh_scp_push_file
-    (scp, "esp32-cam.jpg", pbuff->len, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    (scp, JPG_IMAGE, pbuff->len, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (rc != SSH_OK) {
     Serial.printf("Can't open remote file: %s\n",
             ssh_get_error(session));
@@ -343,8 +344,9 @@ int ex_main(int argc, char **argv){
     }
 
     snprintf(buffer, sizeof(buffer),
-	     "cd %s; php ScpUpload.php esp32-cam.jpg %s",
-	     serverPath.c_str(), WiFi.localIP().toString().c_str());
+	     "cd %s; php ScpUpload.php %s %s",
+	     serverPath.c_str(), JPG_IMAGE,
+	     WiFi.localIP().toString().c_str());
     rc = ssh_channel_request_exec(channel, buffer);
     if (rc < 0) {
         goto failed;
