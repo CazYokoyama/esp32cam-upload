@@ -11,6 +11,7 @@
 // The command line you would use to run this from a shell prompt.
 #define EX_CMD "exec"
 #define JPG_IMAGE "esp32-cam.jpg"
+#define POST_PROCESS_CMD "./post_process.sh"
 
 // Stack size needed to run SSH and the command parser.
 const unsigned int configSTACK = 51200;
@@ -344,9 +345,9 @@ int ex_main(int argc, char **argv){
     }
 
     snprintf(buffer, sizeof(buffer),
-	     "cd %s; php ScpUpload.php %s %s",
-	     serverPath.c_str(), JPG_IMAGE,
-	     WiFi.localIP().toString().c_str());
+	     "cd %s; %s %s %s",
+             serverPath.c_str(), POST_PROCESS_CMD, JPG_IMAGE,
+             WiFi.localIP().toString().c_str());
     rc = ssh_channel_request_exec(channel, buffer);
     if (rc < 0) {
         goto failed;
