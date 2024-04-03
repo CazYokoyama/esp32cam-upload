@@ -61,6 +61,13 @@ camera_setup()
   }
 }
 
+void
+camera_deinit()
+{
+  digitalWrite(PWDN_GPIO_NUM, HIGH);
+  esp_camera_deinit();
+}
+
 /*
  * return 0-100%
  */

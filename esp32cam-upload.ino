@@ -87,6 +87,7 @@ void loop() {
                           photo_prev, photo_current);
             uploadPhoto();
             photo_prev += photo_current + time_to_sleep_s;
+            camera_deinit();
             Serial.print("sleep for "); Serial.print(time_to_sleep_s);
             Serial.println(" sec."); Serial.flush();
             esp_sleep_enable_timer_wakeup(time_to_sleep_s * uS_TO_S_FACTOR);
